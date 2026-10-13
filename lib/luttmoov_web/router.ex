@@ -16,6 +16,8 @@ defmodule LuttmoovWeb.Router do
 
   scope "/", LuttmoovWeb do
     pipe_through :browser
+
+    live "/", MapLive
   end
 
   # Other scopes may use custom stacks.

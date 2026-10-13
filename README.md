@@ -1,4 +1,4 @@
-# Luttmoov
+# Lütt Mööv
 
 To start your Phoenix server:
 

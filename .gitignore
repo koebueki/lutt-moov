@@ -35,3 +35,4 @@ luttmoov-*.tar
 npm-debug.log
 /assets/node_modules/
 
+/db/

@@ -1,0 +1,22 @@
+[tools]
+sqlite = "latest"
+
+[env]
+SQLITE_DB_DIR = "{{config_root}}/db"
+
+[tasks."db:setup"]
+description = "Install sqlite and create the dev and test databases"
+run = [
+  "mkdir -p \"$SQLITE_DB_DIR\"",
+  "sqlite3 \"$SQLITE_DB_DIR/luttmoov_dev.db\" 'PRAGMA journal_mode=WAL;'",
+  "sqlite3 \"$SQLITE_DB_DIR/luttmoov_test.db\" 'PRAGMA journal_mode=WAL;'",
+  "echo \"SQLite databases ready in $SQLITE_DB_DIR\"",
+]
+
+[tasks."db:teardown"]
+description = "Delete the dev and test databases (including WAL/SHM files)"
+run = [
+  "rm -f \"$SQLITE_DB_DIR\"/*.db \"$SQLITE_DB_DIR\"/*.db-wal \"$SQLITE_DB_DIR\"/*.db-shm",
+  "rmdir \"$SQLITE_DB_DIR\" 2>/dev/null || true",
+  "echo \"SQLite databases removed from $SQLITE_DB_DIR\"",
+]

@@ -4,6 +4,7 @@ defmodule Luttmoov.Transit do
   """
 
   import Ecto.Query
+  require Logger
 
   alias Luttmoov.Repo
   alias Luttmoov.Transit.Station

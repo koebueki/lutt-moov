@@ -1,4 +1,4 @@
-# Lütt Mööv
+# Lütt Mööv - Little Seagull
 
 To start your Phoenix server:
 
@@ -26,4 +26,27 @@ mise loads it automatically:
 [env]
 GEOFOX_USER = "your-user"
 GEOFOX_PASSWORD = "your-password"
+```
+
+## Deploying to Fly.io
+
+The app runs as a single Fly machine with its SQLite database on a volume
+(see `fly.toml`). Migrations run when the machine boots, and the stations
+table is filled from the Geofox API on first boot.
+
+One-time setup (pick your own app name and update `app` and `PHX_HOST` in
+`fly.toml` to match):
+
+```sh
+fly apps create lutt-moov
+fly volumes create luttmoov_data --region fra --size 1
+fly secrets set -a lutt-moov SECRET_KEY_BASE="$(mix phx.gen.secret)" \
+  GEOFOX_USER="your-user" GEOFOX_PASSWORD="your-password"
+```
+
+Deploy (keep it to one machine, since SQLite cannot be shared between
+machines):
+
+```sh
+fly deploy --ha=false
 ```

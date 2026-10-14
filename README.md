@@ -1,5 +1,7 @@
 # Lütt Mööv - Little Seagull
 
+Demo site available at: https://luttmoov.kristoffn.net
+
 To start your Phoenix server:
 
 * Run `mix setup` to install and setup dependencies

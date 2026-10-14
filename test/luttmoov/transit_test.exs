@@ -95,4 +95,30 @@ defmodule Luttmoov.TransitTest do
       assert [%{id: "Master:10950"}] = Transit.list_stations()
     end
   end
+
+  describe "sync_stations_if_empty/0" do
+    test "syncs when the table is empty" do
+      stub_stations([@jungfernstieg])
+
+      assert :ok = Transit.sync_stations_if_empty()
+      assert [%{id: "Master:10950"}] = Transit.list_stations()
+    end
+
+    test "does not call the API when stations exist" do
+      stub_stations([@jungfernstieg])
+      assert {:ok, 1} = Transit.sync_stations()
+
+      Req.Test.stub(Luttmoov.Geofox, fn _conn -> flunk("unexpected API call") end)
+
+      assert :ok = Transit.sync_stations_if_empty()
+    end
+
+    test "logs and returns :ok when the sync fails" do
+      stub_stations([])
+
+      log = ExUnit.CaptureLog.capture_log(fn -> assert :ok = Transit.sync_stations_if_empty() end)
+
+      assert log =~ "Station sync failed: :no_stations"
+    end
+  end
 end

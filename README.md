@@ -9,10 +9,21 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 
-## Learn more
+## Geofox API credentials
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+Station and vehicle data come from the HVV Geofox API, which requires credentials from HBT GmbH. 
+The app reads them from two environment variables:
+
+| Variable          | Description          |
+|-------------------|----------------------|
+| `GEOFOX_USER`     | Geofox API user name |
+| `GEOFOX_PASSWORD` | Geofox API password  |
+
+Locally, put them in an untracked `mise.local.toml` (already in `.gitignore`);
+mise loads it automatically:
+
+```toml
+[env]
+GEOFOX_USER = "your-user"
+GEOFOX_PASSWORD = "your-password"
+```

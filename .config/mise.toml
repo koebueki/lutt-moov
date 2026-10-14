@@ -1,5 +1,7 @@
 [tools]
 sqlite = "latest"
+erlang = "28"
+elixir = "1.19.2-otp-28"
 
 [env]
 SQLITE_DB_DIR = "{{config_root}}/db"

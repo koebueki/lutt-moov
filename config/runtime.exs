@@ -20,6 +20,10 @@ if System.get_env("PHX_SERVER") do
   config :luttmoov, LuttmoovWeb.Endpoint, server: true
 end
 
+config :luttmoov, Luttmoov.Geofox,
+  user: System.get_env("GEOFOX_USER"),
+  password: System.get_env("GEOFOX_PASSWORD")
+
 if config_env() == :prod do
   database_path =
     System.get_env("DATABASE_URL") ||

@@ -26,7 +26,7 @@ config :luttmoov, Luttmoov.Geofox,
 
 if config_env() == :prod do
   database_path =
-    System.get_env("DATABASE_URL") ||
+    System.get_env("DATABASE_PATH") ||
       raise """
       environment variable DATABASE_PATH is missing.
       For example: /etc/luttmoov/luttmoov.db

@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+
+if [ "$(id -u)" = "0" ]; then
+  db_dir="$(dirname -- "${DATABASE_PATH:?DATABASE_PATH is not set}")"
+  mkdir -p "$db_dir"
+  chown -R nobody:nogroup "$db_dir"
+  exec setpriv --reuid=nobody --regid=nogroup --init-groups "$0" "$@"
+fi
+
+./migrate
+PHX_SERVER=true exec ./luttmoov start

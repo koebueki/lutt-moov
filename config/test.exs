@@ -29,3 +29,6 @@ config :phoenix_live_view,
 
 # Route Geofox API calls to a Req.Test stub instead of the network
 config :luttmoov, Luttmoov.Geofox, req_options: [plug: {Req.Test, Luttmoov.Geofox}]
+
+# Don't call the Geofox API when the app boots for tests
+config :luttmoov, sync_stations_on_boot: false

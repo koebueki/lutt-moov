@@ -44,6 +44,22 @@ defmodule Luttmoov.Transit do
     end
   end
 
+  @doc """
+  Runs `sync_stations/0` if the `stations` table is empty, logging the
+  outcome. Started at boot by `Luttmoov.Application`.
+  """
+  @spec sync_stations_if_empty() :: :ok
+  def sync_stations_if_empty do
+    if Repo.exists?(Station) do
+      :ok
+    else
+      case sync_stations() do
+        {:ok, count} -> Logger.info("Synced #{count} stations from Geofox")
+        {:error, reason} -> Logger.warning("Station sync failed: #{inspect(reason)}")
+      end
+    end
+  end
+
   defp to_rows(entries) do
     entries
     |> Enum.reject(&(&1["exists"] == false))

@@ -7,7 +7,7 @@ kill_timeout = "10s"
 [build]
 
 [env]
-  PHX_HOST = "lutt-moov.fly.dev"
+  PHX_HOST = "luttmoov.kristoffn.net"
   PORT = "8080"
   DATABASE_PATH = "/data/luttmoov.db"
 

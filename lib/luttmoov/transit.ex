@@ -24,6 +24,33 @@ defmodule Luttmoov.Transit do
   end
 
   @doc """
+  Returns up to `limit` stations whose name contains `term`, names that
+  start with it first. Matching ignores case for ASCII letters only (SQLite
+  `LIKE`). A blank term returns no stations.
+  """
+  @spec search_stations(String.t(), pos_integer()) :: [map()]
+  def search_stations(term, limit \\ 8) do
+    case String.trim(term) do
+      "" ->
+        []
+
+      term ->
+        escaped = escape_like(term)
+        contains = "%" <> escaped <> "%"
+        prefix = escaped <> "%"
+
+        Station
+        |> where([s], fragment("? LIKE ? ESCAPE '\\'", s.name, ^contains))
+        |> order_by([s], desc: fragment("? LIKE ? ESCAPE '\\'", s.name, ^prefix), asc: s.name)
+        |> limit(^limit)
+        |> select([s], map(s, [:id, :name, :city, :lat, :lon]))
+        |> Repo.all()
+    end
+  end
+
+  defp escape_like(term), do: String.replace(term, ~r/[\\%_]/, "\\\\\\0")
+
+  @doc """
   Fetches all stations from the Geofox API and replaces the `stations`
   table with them in a single transaction.
 

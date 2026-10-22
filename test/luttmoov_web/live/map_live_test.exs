@@ -44,4 +44,72 @@ defmodule LuttmoovWeb.MapLiveTest do
 
     assert_push_event(view, "stations", %{stations: []})
   end
+
+  describe "toolbar" do
+    setup do
+      Repo.insert!(%Station{
+        id: "Master:1",
+        name: "Hauptbahnhof",
+        city: "Hamburg",
+        lat: 53.553,
+        lon: 10.006
+      })
+
+      Repo.insert!(%Station{
+        id: "Master:2",
+        name: "Hammer Kirche",
+        city: "Hamburg",
+        lat: 53.555,
+        lon: 10.051
+      })
+
+      :ok
+    end
+
+    test "renders the title, search box and theme toggle", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      assert has_element?(view, "header.navbar", "Lütt Mööv")
+      assert has_element?(view, "#station-search input[name=q]")
+      assert has_element?(view, "header [data-phx-theme=dark]")
+    end
+
+    test "lists matching stations as you type", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> form("#station-search", q: "hamm") |> render_change()
+
+      assert has_element?(view, "#station-results button", "Hammer Kirche")
+      refute has_element?(view, "#station-results button", "Hauptbahnhof")
+    end
+
+    test "picking a result focuses it on the map and closes the list", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> form("#station-search", q: "ha") |> render_change()
+      view |> element("#station-results button", "Hammer Kirche") |> render_click()
+
+      assert_push_event(view, "focus_station", %{id: "Master:2", lat: 53.555, lon: 10.051})
+      refute has_element?(view, "#station-results")
+      assert has_element?(view, "#station-search input[value='Hammer Kirche']")
+    end
+
+    test "submitting focuses the top result", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> form("#station-search", q: "ha") |> render_change()
+      view |> form("#station-search") |> render_submit()
+
+      assert_push_event(view, "focus_station", %{id: "Master:2"})
+    end
+
+    test "submitting with no results does nothing", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      view |> form("#station-search", q: "nowhere") |> render_change()
+      view |> form("#station-search") |> render_submit()
+
+      refute_push_event(view, "focus_station", %{})
+    end
+  end
 end

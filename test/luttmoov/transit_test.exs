@@ -2,6 +2,7 @@ defmodule Luttmoov.TransitTest do
   use Luttmoov.DataCase
 
   alias Luttmoov.Transit
+  alias Luttmoov.Transit.Station
 
   @jungfernstieg %{
     "id" => "Master:10950",
@@ -120,5 +121,40 @@ defmodule Luttmoov.TransitTest do
 
       assert log =~ "Station sync failed: :no_stations"
     end
+  end
+
+  describe "search_stations/2" do
+    setup do
+      for {id, name} <- [
+            {"Master:1", "Hauptbahnhof"},
+            {"Master:2", "Barmbek"},
+            {"Master:3", "Hamburg Hbf"},
+            {"Master:4", "100%_Halt"}
+          ] do
+        Repo.insert!(%Station{id: id, name: name, city: "Hamburg", lat: 53.5, lon: 10.0})
+      end
+
+      :ok
+    end
+
+    test "matches anywhere in the name, ignoring case, prefix matches first" do
+      assert ["Hamburg Hbf", "Hauptbahnhof", "100%_Halt"] = names(Transit.search_stations("HA"))
+      assert ["Barmbek"] = names(Transit.search_stations("rmb"))
+    end
+
+    test "treats LIKE wildcards in the term literally" do
+      assert ["100%_Halt"] = names(Transit.search_stations("%_"))
+      assert [] = Transit.search_stations("Ha_pt")
+    end
+
+    test "returns no stations for a blank term" do
+      assert [] = Transit.search_stations("  ")
+    end
+
+    test "returns at most limit stations" do
+      assert [_] = Transit.search_stations("a", 1)
+    end
+
+    defp names(stations), do: Enum.map(stations, & &1.name)
   end
 end

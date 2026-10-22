@@ -43,7 +43,8 @@ One-time setup (pick your own app name and update `app` and `PHX_HOST` in
 fly apps create lutt-moov
 fly volumes create luttmoov_data --region fra --size 1
 fly secrets set -a lutt-moov SECRET_KEY_BASE="$(mix phx.gen.secret)" \
-  GEOFOX_USER="your-user" GEOFOX_PASSWORD="your-password"
+  GEOFOX_USER="your-user" GEOFOX_PASSWORD="your-password" \
+  ED25519_PRIVATE_KEY_HEX="$(openssl rand -hex 32)"
 ```
 
 Deploy (keep it to one machine, since SQLite cannot be shared between

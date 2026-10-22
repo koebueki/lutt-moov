@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
@@ -11,4 +11,24 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 ./migrate
-PHX_SERVER=true exec ./luttmoov start
+
+# Anubis (https://anubis.techaro.lol) takes the public port and forwards the
+# requests it lets through to Phoenix on loopback. Both are configured through
+# the environment, see fly.toml.
+anubis &
+anubis_pid=$!
+
+PHX_SERVER=true ./luttmoov start &
+phoenix_pid=$!
+
+stop_all() {
+  kill -TERM "$anubis_pid" "$phoenix_pid" 2>/dev/null || true
+  wait
+}
+
+trap 'stop_all; exit 0' TERM INT
+
+wait -n || true
+echo "server: anubis or phoenix exited unexpectedly, shutting down" >&2
+stop_all
+exit 1

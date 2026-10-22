@@ -8,8 +8,18 @@ kill_timeout = "10s"
 
 [env]
   PHX_HOST = "luttmoov.kristoffn.net"
-  PORT = "8080"
   DATABASE_PATH = "/data/luttmoov.db"
+
+  # Requests go Fly proxy -> Anubis (:8080) -> Phoenix (127.0.0.1:4000)
+  PHX_IP = "127.0.0.1"
+  PORT = "4000"
+
+  # Anubis, see https://anubis.techaro.lol/docs/admin/installation
+  BIND = ":8080"
+  TARGET = "http://127.0.0.1:4000"
+  POLICY_FNAME = "/app/anubis/botPolicies.yaml"
+  CUSTOM_REAL_IP_HEADER = "Fly-Client-IP"
+  REDIRECT_DOMAINS = "luttmoov.kristoffn.net"
 
 [mounts]
   source = "luttmoov_data"
@@ -32,8 +42,13 @@ kill_timeout = "10s"
     grace_period = "30s"
     interval = "30s"
     method = "GET"
-    path = "/"
+    # Goes through Anubis to Phoenix. Anubis always lets /robots.txt through,
+    # whereas "/" may get a challenge page (with status 200) instead.
+    path = "/robots.txt"
     timeout = "5s"
+
+  [http_service.checks.headers]
+    Fly-Client-IP = "127.0.0.1"
 
 [[vm]]
   cpu_kind = "shared"

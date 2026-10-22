@@ -1,0 +1,14 @@
+# Reference: https://anubis.techaro.lol/docs/admin/policies
+# Upstream default: https://github.com/TecharoHQ/anubis/blob/main/data/botPolicies.yaml
+
+bots:
+  - import: (data)/meta/default-config.yaml
+
+metrics:
+  bind: "127.0.0.1:9090"
+  network: tcp
+
+store:
+  backend: bbolt
+  parameters:
+    path: /data/anubis.bdb

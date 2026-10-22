@@ -51,16 +51,22 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
+  # Listen on all interfaces by default. On Fly.io this is set to loopback, so
+  # that Phoenix is only reachable through Anubis (see fly.toml).
+  ip =
+    case :inet.parse_address(String.to_charlist(System.get_env("PHX_IP") || "::")) do
+      {:ok, ip} -> ip
+      {:error, _} -> raise "environment variable PHX_IP is not a valid IP address"
+    end
+
   config :luttmoov, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :luttmoov, LuttmoovWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
-      # Enable IPv6 and bind on all interfaces.
-      # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: ip,
       port: port
     ],
     secret_key_base: secret_key_base

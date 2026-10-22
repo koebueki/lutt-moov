@@ -4,6 +4,9 @@ ARG DEBIAN_VERSION=trixie-20260610-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+ARG ANUBIS_IMAGE="ghcr.io/techarohq/anubis:v1.28.1@sha256:1744c03a918160a28b0d2e8c1656de6585f4071b30b4c3b0d51d02282c9b7c25"
+
+FROM ${ANUBIS_IMAGE} AS anubis
 
 FROM ${BUILDER_IMAGE} AS builder
 RUN apt-get update \
@@ -57,6 +60,7 @@ RUN chown nobody /app
 ENV MIX_ENV="prod"
 
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/luttmoov ./
+COPY --from=anubis /ko-app/anubis /usr/local/bin/anubis
 
 # Stay root here: /data is a Fly volume, mounted root-owned at runtime.
 # bin/server fixes its ownership and then drops to `nobody` (see rel/overlays).

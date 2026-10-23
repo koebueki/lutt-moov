@@ -15,7 +15,12 @@ defmodule LuttmoovWeb.MapLive do
         socket
       end
 
-    {:ok, assign(socket, query: "", results: [])}
+    {:ok,
+     assign(socket,
+       query: "",
+       results: [],
+       maptiler_key: Application.get_env(:luttmoov, :maptiler_key)
+     )}
   end
 
   @impl true
@@ -88,7 +93,14 @@ defmodule LuttmoovWeb.MapLive do
       </header>
 
       <%!-- isolate keeps Leaflet's z-indexed panes from covering the search results --%>
-      <div id="map" phx-hook=".Map" phx-update="ignore" class="isolate min-h-0 flex-1"></div>
+      <div
+        id="map"
+        phx-hook=".Map"
+        phx-update="ignore"
+        data-maptiler-key={@maptiler_key}
+        class="isolate min-h-0 flex-1"
+      >
+      </div>
     </div>
     <Layouts.flash_group flash={@flash} />
 
@@ -97,6 +109,8 @@ defmodule LuttmoovWeb.MapLive do
       const CENTER = [53.55, 10.0]
       const ZOOM = 12
       const FOCUS_ZOOM = 16
+      // Any MapTiler map ID, see https://cloud.maptiler.com/maps/
+      const MAP_STYLE = "streets-v2"
       const STATION_STYLE = {
         radius: 4,
         color: "#1e3a8a",
@@ -116,10 +130,18 @@ defmodule LuttmoovWeb.MapLive do
         mounted() {
           this.map = L.map(this.el, {preferCanvas: true}).setView(CENTER, ZOOM)
 
-          L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
+          // 512px tiles with zoomOffset -1 need a quarter of the requests of
+          // 256px ones, and MapTiler bills per request. {r} adds @2x on HiDPI.
+          const key = encodeURIComponent(this.el.dataset.maptilerKey)
+          L.tileLayer(`https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}{r}.png?key=${key}`, {
+            tileSize: 512,
+            zoomOffset: -1,
+            minZoom: 1,
+            maxZoom: 20,
+            crossOrigin: true,
             attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> ' +
+              '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
           }).addTo(this.map)
 
           this.stations = L.layerGroup().addTo(this.map)

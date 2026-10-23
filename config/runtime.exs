@@ -24,6 +24,8 @@ config :luttmoov, Luttmoov.Geofox,
   user: System.get_env("GEOFOX_USER"),
   password: System.get_env("GEOFOX_PASSWORD")
 
+config :luttmoov, :maptiler_key, System.get_env("MAPTILER_KEY")
+
 if config_env() == :prod do
   database_path =
     System.get_env("DATABASE_PATH") ||

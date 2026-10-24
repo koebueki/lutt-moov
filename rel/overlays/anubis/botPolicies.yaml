@@ -4,6 +4,10 @@
 bots:
   - import: (data)/meta/default-config.yaml
 
+  - name: phoenix-live-socket
+    path_regex: ^/live/(?:websocket|longpoll)$
+    action: ALLOW
+
 metrics:
   bind: "127.0.0.1:9090"
   network: tcp

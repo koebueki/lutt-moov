@@ -51,6 +51,73 @@ defmodule Luttmoov.Transit do
   defp escape_like(term), do: String.replace(term, ~r/[\\%_]/, "\\\\\\0")
 
   @doc """
+  Returns the station with the given id, or `nil`.
+  """
+  @spec get_station(String.t()) :: %Station{} | nil
+  def get_station(id), do: Repo.get(Station, id)
+
+  @doc """
+  Fetches the next departures from `station` within the next hour, with
+  realtime delays, from the Geofox API.
+
+  Each departure is a map with:
+
+    * `:line`, `:direction` - e.g. `"U3"`, `"Barmbek"`
+    * `:time` - planned departure as `"HH:MM"` (local time), or `nil`
+    * `:minutes` - minutes until departure, including the delay
+    * `:delay` - delay in whole minutes
+    * `:cancelled` - whether the departure is cancelled
+    * `:platform` - the realtime platform if known, else the planned one
+  """
+  @spec list_departures(%Station{}) :: {:ok, [map()]} | {:error, term()}
+  def list_departures(%Station{id: id, name: name}) do
+    station = %{"id" => id, "name" => name, "type" => "STATION"}
+    # GTI resolves "heute"/"jetzt" in Hamburg time, so no time zone handling here.
+    now = Geofox.gti_time("heute", "jetzt")
+
+    case Geofox.departure_list(Luttmoov.Geofox.client(), station, now,
+           max_list: 10,
+           max_time_offset: 60,
+           use_realtime: true
+         ) do
+      {:ok, %{"returnCode" => "OK"} = response} ->
+        reference = parse_time(response["time"])
+        {:ok, Enum.map(response["departures"] || [], &departure(&1, reference))}
+
+      {:ok, response} ->
+        {:error, {:unexpected_response, response}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # `timeOffset` is in minutes from the response's `time`, `delay` in seconds.
+  defp departure(entry, reference) do
+    offset = entry["timeOffset"] || 0
+    delay = div(entry["delay"] || 0, 60)
+
+    %{
+      line: get_in(entry, ["line", "name"]),
+      direction: get_in(entry, ["line", "direction"]),
+      time: reference && reference |> Time.add(offset, :minute) |> Calendar.strftime("%H:%M"),
+      minutes: offset + delay,
+      delay: delay,
+      cancelled: entry["cancelled"] == true,
+      platform: entry["realtimePlatform"] || entry["platform"]
+    }
+  end
+
+  defp parse_time(%{"time" => time}) when is_binary(time) do
+    case Time.from_iso8601(time <> ":00") do
+      {:ok, time} -> time
+      {:error, _} -> nil
+    end
+  end
+
+  defp parse_time(_), do: nil
+
+  @doc """
   Fetches all stations from the Geofox API and replaces the `stations`
   table with them in a single transaction.
 

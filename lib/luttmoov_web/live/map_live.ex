@@ -119,11 +119,30 @@ defmodule LuttmoovWeb.MapLive do
         fillOpacity: 0.8,
       }
 
-      // Station names come from the API, so they go in as text, never HTML.
-      function popupContent(station) {
-        const el = document.createElement("span")
-        el.textContent = station.name
+      const DEPARTURES_REFRESH_MS = 30_000
+
+      // Station names and departures come from the API, so they go in as
+      // text, never HTML.
+      function textElement(tag, className, text) {
+        const el = document.createElement(tag)
+        el.className = className
+        el.textContent = text
         return el
+      }
+
+      function departureRow({line, direction, time, minutes, delay, cancelled}) {
+        const due = cancelled ? "cancelled" : minutes <= 0 ? "now" : `${minutes} min`
+        const dueClass = cancelled || delay > 0 ? "text-error font-semibold" : "font-semibold"
+
+        const row = document.createElement("li")
+        row.className = "flex items-center gap-2 py-0.5"
+        row.append(
+          textElement("span", "badge badge-sm badge-neutral shrink-0", line ?? "?"),
+          textElement("span", "min-w-0 flex-1 truncate", direction ?? ""),
+          textElement("span", "shrink-0 tabular-nums opacity-60", time ?? ""),
+          textElement("span", `w-16 shrink-0 text-right tabular-nums ${dueClass}`, due),
+        )
+        return row
       }
 
       export default {
@@ -155,7 +174,9 @@ defmodule LuttmoovWeb.MapLive do
 
             for (const station of stations) {
               const marker = L.circleMarker([station.lat, station.lon], STATION_STYLE)
-                .bindPopup(popupContent(station))
+                .bindPopup("")
+                .on("popupopen", ({popup}) => this.showDepartures(popup, station))
+                .on("popupclose", () => this.stopDepartures())
                 .addTo(this.stations)
 
               this.markers.set(station.id, marker)
@@ -168,7 +189,56 @@ defmodule LuttmoovWeb.MapLive do
           })
         },
 
+        // Fills the popup with the station's departures and refreshes them
+        // until the popup closes.
+        showDepartures(popup, station) {
+          this.stopDepartures()
+
+          const status = textElement("p", "mt-1 opacity-60", "Loading departures…")
+          const list = textElement("ul", "mt-1", "")
+          const content = document.createElement("div")
+          content.className = "w-72 max-w-full"
+          content.append(textElement("strong", "", station.name), status, list)
+          popup.setContent(content)
+
+          const abort = new AbortController()
+          const url = `/api/stations/${encodeURIComponent(station.id)}/departures`
+
+          const load = async () => {
+            try {
+              const response = await fetch(url, {
+                signal: abort.signal,
+                headers: {accept: "application/json"},
+              })
+              if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+              const {departures} = await response.json()
+              list.replaceChildren(...departures.map(departureRow))
+              status.textContent = "No departures in the next hour"
+              status.hidden = departures.length > 0
+            } catch (error) {
+              if (error.name === "AbortError") return
+              list.replaceChildren()
+              status.textContent = "Departures are unavailable right now"
+              status.hidden = false
+            }
+            // Re-layout, since the content changed size.
+            popup.update()
+          }
+
+          load()
+          this.departures = {abort, timer: setInterval(load, DEPARTURES_REFRESH_MS)}
+        },
+
+        stopDepartures() {
+          if (!this.departures) return
+          this.departures.abort.abort()
+          clearInterval(this.departures.timer)
+          this.departures = null
+        },
+
         destroyed() {
+          this.stopDepartures()
           this.map.remove()
         },
       }

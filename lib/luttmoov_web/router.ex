@@ -20,8 +20,9 @@ defmodule LuttmoovWeb.Router do
     live "/", MapLive
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", LuttmoovWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", LuttmoovWeb do
+    pipe_through :api
+
+    get "/stations/:station_id/departures", DepartureController, :index
+  end
 end

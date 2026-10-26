@@ -62,7 +62,8 @@ defmodule Luttmoov.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:geofox_ex, "~> 1.0"}
+      {:geofox_ex, "~> 1.0"},
+      {:postgrex, "~> 0.22.4"}
     ]
   end
 

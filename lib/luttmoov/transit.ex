@@ -9,7 +9,6 @@ defmodule Luttmoov.Transit do
   alias Luttmoov.Repo
   alias Luttmoov.Transit.Station
 
-  # 6 columns x 500 rows = 3,000 bind parameters, well below SQLite's limit.
   @insert_chunk_size 500
 
   @doc """
@@ -25,8 +24,8 @@ defmodule Luttmoov.Transit do
 
   @doc """
   Returns up to `limit` stations whose name contains `term`, names that
-  start with it first. Matching ignores case for ASCII letters only (SQLite
-  `LIKE`). A blank term returns no stations.
+  start with it first. Matching ignores case (Postgres `ILIKE`). A blank term
+  returns no stations.
   """
   @spec search_stations(String.t(), pos_integer()) :: [map()]
   def search_stations(term, limit \\ 8) do
@@ -40,8 +39,8 @@ defmodule Luttmoov.Transit do
         prefix = escaped <> "%"
 
         Station
-        |> where([s], fragment("? LIKE ? ESCAPE '\\'", s.name, ^contains))
-        |> order_by([s], desc: fragment("? LIKE ? ESCAPE '\\'", s.name, ^prefix), asc: s.name)
+        |> where([s], ilike(s.name, ^contains))
+        |> order_by([s], desc: ilike(s.name, ^prefix), asc: s.name)
         |> limit(^limit)
         |> select([s], map(s, [:id, :name, :city, :lat, :lon]))
         |> Repo.all()

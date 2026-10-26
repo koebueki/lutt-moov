@@ -27,15 +27,19 @@ config :luttmoov, Luttmoov.Geofox,
 config :luttmoov, :maptiler_key, System.get_env("MAPTILER_KEY")
 
 if config_env() == :prod do
-  database_path =
-    System.get_env("DATABASE_PATH") ||
+  database_url =
+    System.get_env("DATABASE_URL") ||
       raise """
-      environment variable DATABASE_PATH is missing.
-      For example: /etc/luttmoov/luttmoov.db
+      environment variable DATABASE_URL is missing.
+      For example: postgresql://USER:PASS@ep-example-123456.eu-central-1.aws.neon.tech/neondb
       """
 
+  # Neon only accepts TLS connections. `ssl: true` verifies the server
+  # certificate against the OS CA store, so any `sslmode` in the URL is
+  # not needed (and ignored).
   config :luttmoov, Luttmoov.Repo,
-    database: database_path,
+    url: database_url,
+    ssl: true,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

@@ -2,7 +2,10 @@ import Config
 
 # Configure your database
 config :luttmoov, Luttmoov.Repo,
-  database: Path.expand("../db/luttmoov_dev.db", __DIR__),
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "luttmoov_dev",
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true

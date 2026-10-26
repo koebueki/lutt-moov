@@ -62,12 +62,6 @@ ENV MIX_ENV="prod"
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/luttmoov ./
 COPY --from=anubis /ko-app/anubis /usr/local/bin/anubis
 
-# Stay root here: /data is a Fly volume, mounted root-owned at runtime.
-# bin/server fixes its ownership and then drops to `nobody` (see rel/overlays).
-
-# If using an environment that doesn't automatically reap zombie processes, it is
-# advised to add an init process such as tini via `apt-get install`
-# above and adding an entrypoint. See https://github.com/krallin/tini for details
-# ENTRYPOINT ["/tini", "--"]
+USER nobody
 
 CMD ["/app/bin/server"]
